@@ -1,15 +1,11 @@
-let s = "yashhhede";
 
-const indexer = (s) => {
-    s = s.split('');
-    let letterMap = [];
+let nums = ['2', '4', '25', '10', '3']; 
 
-    s.forEach((item,index) => {
-        letterMap[item] = letterMap[item] || [];
-        letterMap[item].push(index);
-    });
-    return letterMap;
+
+function convert(nums) {
+   return nums.map(num => {
+      return  +num < 10 ? `0${num}` : num;
+    })
 }
 
-let ans = indexer(s);
-console.log(ans)
+console.log(convert(nums))
