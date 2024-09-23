@@ -4,61 +4,45 @@ const PORT = 3000;
 
 app.use(express.json());
 
-let users = [];
+const products = [
+    { id: 1, name: 'Product 1', price: 10 },
+    { id: 2, name: 'Product 2', price: 20 },
+    { id: 3, name: 'Product 3', price: 30 },
+    { id: 4, name: 'Product 4', price: 40 },
+    { id: 5, name: 'Product 5', price: 50 },
+    { id: 6, name: 'Product 6', price: 60 },
+    { id: 7, name: 'Product 7', price: 70 },
+    { id: 8, name: 'Product 8', price: 80 },
+    { id: 9, name: 'Product 9', price: 90 },
+    { id: 10, name: 'Product 10', price: 100 },
+    { id: 11, name: 'Product 11', price: 110 },
+    { id: 12, name: 'Product 12', price: 120 },
+    // Add more products if needed...
+];
+
+app.get("/products", (req, res) => {
+  const page = parseInt(req.query.page) || 1;  // Default to page 1 if not provided
+  const limit = parseInt(req.query.limit) || 10;
+
+  const totalPage = Math.ceil(products.length / limit);
 
 
-app.post('/users', (req, res) => {
-  const { name, email } = req.body;
-  const newId = users.length + 1;
-  users.push({ newId, name, email });
-  
-  res.status(201).json(users)
-});
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
 
 
+  const display = products.slice(startIndex, endIndex);
 
-app.get('/users', (req, res) => {
-  res.status(200).json(users);
-})
-app.get('/users/:id', (req, res) => {
-  const { id } = parseInt(req.params.id);
-
-  const user = users.find(item => item.id === id);
-
-  if (user) {
-    res.json(user)
-  } else {
-    res.status(404).send("no user exists")
+  const response = {
+    totalPage,
+    data: display,
+    page,
+    limit
   }
+  res.json(response)
 })
-app.put('/users/:id', (req, res) => {
-  const userId = parseInt(req.params.id);
-    const { name, email } = req.body;
-    
-    // Find the user by ID
-    const userIndex = users.findIndex(u => u.id === userId);
-    
-    if (userIndex !== -1) {
-        // Update the user details
-        users[userIndex] = { id: userId, name, email };
-        res.status(200).json(users[userIndex]);
-    } else {
-        res.status(404).json({ message: 'User not found' });
-    }
-})
-app.delete('/users/:id', (req, res) => {
-    const userId = parseInt(req.params.id);
-    
-    // Find the user by ID and remove them from the array
-    const userIndex = users.findIndex(u => u.id === userId);
-    
-    if (userIndex !== -1) {
-        users.splice(userIndex, 1);  // Remove the user from the array
-        res.status(200).json({ message: 'User deleted successfully' });
-    } else {
-        res.status(404).json({ message: 'User not found' });
-    }
-});
+
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
