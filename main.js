@@ -1,58 +1,59 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const dotenv = require('dotenv');
+
+dotenv.config();
+
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
+app.use(express.json()); // Middleware to parse JSON bodies
 
+// Mock user data (in a real app, this would be in a database)
+const users = [];
 
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function main() {
-  const start = new Date();
-  
-  await delay(10000);  // Wait for 10 seconds
-  
-  const end = new Date();
-  console.log((end - start)/1000);  // Prints the difference in milliseconds (should be around 10000)
-}
-
-let requestCount = 0;
-let firstTime;
-
-
-const timeoutLimit = 1000;
-
-const ratelimit = 5;
-
-
-
-app.get("test", (req, res) => {
-  const { userid } = req.body;
-  const currentTme = new Date();
-
-
-  if (!firstTime) {
-    firstTime = currentTme;
-  }
-
-  if (currentTme - firstTime < timeoutLimit) {
-    requestCount++;
-
-   if (requestCount > ratelimit) {
-      // If the limit is exceeded, send a rate limit error
-      return res.status(429).json({ error: "Rate limit hit" });
-    }
-  } else {
-     firstTime = currentTme;
-    requestCount = 1; // Count this request
-  }
-  res.json({ message: "Request successful" });
-})
-
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// Register a new user (for testing purposes)
+app.post('/register', async (req, res) => {
+  const { username, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
+  users.push({ username, password: hashedPassword });
+  res.status(201).json({ message: 'User registered!' });
 });
 
+// Login route
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  const user = users.find(u => u.username === username);
+  if (!user) {
+    return res.status(400).json({ message: 'Invalid username or password' });
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return res.status(400).json({ message: 'Invalid username or password' });
+  }
+
+  const token = jwt.sign({ username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  res.json({ token });
+});
+
+// Protected route
+app.get('/profile', (req, res) => {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) {
+    return res.sendStatus(403); // Forbidden
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.sendStatus(403); // Forbidden
+    }
+    res.json({ message: 'Profile data', user });
+  });
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
